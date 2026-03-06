@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import logoST from '../assets/logost.png';
-import { obtenerYIncrementarContador, registrarTicket } from '../firebase.js';
+import { obtenerYIncrementarContador, registrarTicket, resetearColaMedianoche } from '../firebase.js';
 
 /* ── SVG Icons ── */
 const IconTicket = () => (
@@ -114,7 +114,10 @@ const Inicio = () => {
     manana.setDate(manana.getDate() + 1);
     manana.setHours(0, 0, 0, 0);
     const msHastaMedianoche = manana - ahora;
-    const t = setTimeout(() => {
+    const t = setTimeout(async () => {
+      // 1. Borrar cola activa en Firebase (historial ya está guardado ticket a ticket)
+      await resetearColaMedianoche();
+      // 2. Resetear estado local
       setTurneroIniciado(false);
       setAnimating(false);
       setRut('');
@@ -183,15 +186,16 @@ const Inicio = () => {
     const serviceNames = { cft: 'Centro de Formación Técnica', esperas: 'Lista de Espera', consulta: 'Consultas', tens: 'Técnico en Enfermería', salud: 'Área de Salud', ip: 'Instituto Profesional' };
     const letters = { tens: 'A', salud: 'B', cft: 'C', ip: 'D', consulta: 'E', esperas: 'F' };
     const servicioNombre = subServicio || serviceNames[service];
+    const letra = letters[service];
 
     setGenerando(true);
     try {
-      // 1. Obtener número atómico desde Firebase
+      // 1. Número atómico desde Firebase
       const numero = await obtenerYIncrementarContador(service);
-      const ticketNumber = `${letters[service]}-${numero}`;
+      const ticketNumber = `${letra}-${numero}`;
 
-      // 2. Registrar ticket en Firebase (lo lee la app de atención)
-      await registrarTicket(service, numero, currentUser, servicioNombre);
+      // 2. Registrar en cola activa + historial
+      await registrarTicket(service, numero, letra, currentUser, servicioNombre);
 
       // 3. Generar PDF / boleto físico
       generarBoletoPDF(ticketNumber, currentUser, servicioNombre);
