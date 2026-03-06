@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import logoST from '../assets/logost.png';
+import { obtenerYIncrementarContador, registrarTicket } from '../firebase.js';
 
 /* ── SVG Icons ── */
 const IconTicket = () => (
@@ -97,7 +98,7 @@ const Inicio = () => {
   const [rut, setRut] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
-  const [counters, setCounters] = useState({ cft: 1, ip: 1, consulta: 1, esperas: 1, tens: 1, salud: 1 });
+  const [generando, setGenerando] = useState(false); // loading mientras escribe en Firebase
   const [fecha, setFecha] = useState(new Date());
 
   // Actualizar reloj cada segundo en pantalla de inicio
@@ -119,7 +120,6 @@ const Inicio = () => {
       setRut('');
       setCurrentUser(null);
       setSelectedService(null);
-      setCounters({ cft: 1, ip: 1, consulta: 1, esperas: 1, tens: 1, salud: 1 });
     }, msHastaMedianoche);
     return () => clearTimeout(t);
   }, [turneroIniciado]);
@@ -179,12 +179,29 @@ const Inicio = () => {
     window.open(doc.output('bloburl'), '_blank');
   };
 
-  const generarTurno = (service, subServicio) => {
+  const generarTurno = async (service, subServicio) => {
     const serviceNames = { cft: 'Centro de Formación Técnica', esperas: 'Lista de Espera', consulta: 'Consultas', tens: 'Técnico en Enfermería', salud: 'Área de Salud', ip: 'Instituto Profesional' };
     const letters = { tens: 'A', salud: 'B', cft: 'C', ip: 'D', consulta: 'E', esperas: 'F' };
-    const ticketNumber = `${letters[service]}-${counters[service]}`;
-    generarBoletoPDF(ticketNumber, currentUser, subServicio || serviceNames[service]);
-    setCounters(prev => ({ ...prev, [service]: prev[service] + 1 }));
+    const servicioNombre = subServicio || serviceNames[service];
+
+    setGenerando(true);
+    try {
+      // 1. Obtener número atómico desde Firebase
+      const numero = await obtenerYIncrementarContador(service);
+      const ticketNumber = `${letters[service]}-${numero}`;
+
+      // 2. Registrar ticket en Firebase (lo lee la app de atención)
+      await registrarTicket(service, numero, currentUser, servicioNombre);
+
+      // 3. Generar PDF / boleto físico
+      generarBoletoPDF(ticketNumber, currentUser, servicioNombre);
+    } catch (err) {
+      console.error('Error generando turno:', err);
+      alert('Error al conectar con el servidor. Intenta nuevamente.');
+    } finally {
+      setGenerando(false);
+    }
+
     setTimeout(() => { setCurrentUser(null); setRut(''); setSelectedService(null); }, 3000);
   };
 
@@ -364,13 +381,14 @@ const Inicio = () => {
               <button
                 key={item.service}
                 onClick={() => generarTurno(item.service, item.label)}
-                style={{ background: '#fff', border: '1px solid #f3f4f6', borderRadius: '16px', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', width: '100%' }}
+                disabled={generando}
+                style={{ background: '#fff', border: '1px solid #f3f4f6', borderRadius: '16px', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px', cursor: generando ? 'not-allowed' : 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', width: '100%', opacity: generando ? 0.7 : 1 }}
               >
                 <div style={{ width: '40px', height: '40px', background: '#f3f4f6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0 }}>
                   {item.icon}
                 </div>
                 <span style={{ flex: 1, textAlign: 'left', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
-                  {item.label}
+                  {generando ? 'Generando turno...' : item.label}
                 </span>
                 <IconChevron />
               </button>
@@ -429,13 +447,16 @@ const Inicio = () => {
             <button
               key={svc.key}
               onClick={() => handleServiceSelect(svc.key)}
-              style={{ background: '#22c55e', border: 'none', borderRadius: '18px', padding: '20px 22px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', width: '100%', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}
+              disabled={generando}
+              style={{ background: '#22c55e', border: 'none', borderRadius: '18px', padding: '20px 22px', display: 'flex', alignItems: 'center', gap: '14px', cursor: generando ? 'not-allowed' : 'pointer', width: '100%', boxShadow: '0 4px 14px rgba(34,197,94,0.3)', opacity: generando ? 0.7 : 1 }}
             >
               <div style={{ flex: 1, textAlign: 'left' }}>
                 <div style={{ fontSize: '16px', fontWeight: '800', color: '#14532d', marginBottom: '2px' }}>{svc.label}</div>
                 <div style={{ fontSize: '13px', color: '#166534' }}>{svc.desc}</div>
               </div>
-              <div style={{ color: '#14532d' }}>{svc.icon}</div>
+              <div style={{ color: '#14532d' }}>
+                {generando ? <span style={{ fontSize: '12px', fontWeight: '600' }}>...</span> : svc.icon}
+              </div>
             </button>
           ))}
         </div>
