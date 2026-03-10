@@ -163,23 +163,105 @@ const Inicio = () => {
   };
 
   const generarBoletoPDF = (ticketNumber, rut, servicioNombre) => {
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [80, 100] });
-    doc.setFontSize(14);
-    doc.text('Tótem de Atención', 40, 10, { align: 'center' });
-    doc.setFontSize(36);
-    doc.text(ticketNumber, 40, 40, { align: 'center' });
-    doc.setDrawColor(0);
-    doc.line(10, 45, 70, 45);
-    doc.setFontSize(12);
-    doc.setTextColor(80, 80, 80);
-    doc.text(`Servicio: ${servicioNombre}`, 10, 55);
-    doc.text(`RUT: ${rut}`, 10, 63);
-    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 10, 71);
-    doc.text(`Hora: ${new Date().toLocaleTimeString()}`, 10, 79);
-    doc.setFontSize(10);
-    doc.text('Por favor espere su turno.', 40, 90, { align: 'center' });
-    doc.autoPrint();
-    window.open(doc.output('bloburl'), '_blank');
+    // Impresora térmica AB-PD880 — papel 80mm de ancho, largo continuo
+    // Márgenes: 4mm c/u → área útil = 72mm
+    // Alto calculado exacto al contenido para evitar hoja en blanco al final
+    const W = 80;       // ancho físico del papel (mm)
+    const M = 4;        // margen lateral
+    const CX = W / 2;  // centro horizontal
+
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [W, 148] });
+
+    // ── Encabezado ────────────────────────────────────────────────────
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text('TÓTEM DE ATENCIÓN', CX, 8, { align: 'center' });
+
+    // ── Línea separadora ──────────────────────────────────────────────
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.line(M, 11, W - M, 11);
+
+    // ── Número de ticket (grande, protagonista) ───────────────────────
+    doc.setFontSize(64);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text(ticketNumber, CX, 50, { align: 'center' });
+
+    // ── Línea separadora ──────────────────────────────────────────────
+    doc.setDrawColor(200, 200, 200);
+    doc.line(M, 56, W - M, 56);
+
+    // ── Datos del ticket ──────────────────────────────────────────────
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(60, 60, 60);
+
+    const ahora = new Date();
+    const fecha = ahora.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const hora  = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+
+    // Servicio con wrap automático si es largo
+    const lineasServicio = doc.splitTextToSize(`Servicio: ${servicioNombre}`, W - M * 2);
+    doc.text(lineasServicio, M, 63);
+    const yDespuesServicio = 63 + lineasServicio.length * 4.5;
+
+    doc.text(`RUT:     ${rut}`,   M, yDespuesServicio);
+    doc.text(`Fecha:   ${fecha}`, M, yDespuesServicio + 5);
+    doc.text(`Hora:    ${hora}`,  M, yDespuesServicio + 10);
+
+    // ── Línea final + mensaje ─────────────────────────────────────────
+    const yFinal = yDespuesServicio + 17;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(M, yFinal, W - M, yFinal);
+    doc.setFontSize(7.5);
+    doc.setTextColor(120, 120, 120);
+    doc.text('Por favor espere su turno.', CX, yFinal + 5, { align: 'center' });
+
+    // ── Recortar PDF al alto real del contenido ───────────────────────
+    const altoPDF = yFinal + 10;
+    const docFinal = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [W, altoPDF] });
+    // Re-dibuja todo en el doc con tamaño exacto
+    docFinal.setFontSize(9);
+    docFinal.setTextColor(100, 100, 100);
+    docFinal.text('TÓTEM DE ATENCIÓN', CX, 8, { align: 'center' });
+    docFinal.setDrawColor(200, 200, 200);
+    docFinal.setLineWidth(0.3);
+    docFinal.line(M, 11, W - M, 11);
+    docFinal.setFontSize(64);
+    docFinal.setTextColor(0, 0, 0);
+    docFinal.setFont('helvetica', 'bold');
+    docFinal.text(ticketNumber, CX, 50, { align: 'center' });
+    docFinal.setDrawColor(200, 200, 200);
+    docFinal.line(M, 56, W - M, 56);
+    docFinal.setFont('helvetica', 'normal');
+    docFinal.setFontSize(8);
+    docFinal.setTextColor(60, 60, 60);
+    docFinal.text(lineasServicio, M, 63);
+    docFinal.text(`RUT:     ${rut}`,   M, yDespuesServicio);
+    docFinal.text(`Fecha:   ${fecha}`, M, yDespuesServicio + 5);
+    docFinal.text(`Hora:    ${hora}`,  M, yDespuesServicio + 10);
+    docFinal.setDrawColor(200, 200, 200);
+    docFinal.line(M, yFinal, W - M, yFinal);
+    docFinal.setFontSize(7.5);
+    docFinal.setTextColor(120, 120, 120);
+    docFinal.text('Por favor espere su turno.', CX, yFinal + 5, { align: 'center' });
+
+    // ── Imprimir al instante sin nueva ventana (iframe oculto) ────────
+    const pdfDataUri = docFinal.output('datauristring');
+    let iframe = document.getElementById('_print_frame_totem');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = '_print_frame_totem';
+      iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;visibility:hidden;';
+      document.body.appendChild(iframe);
+    }
+    iframe.src = pdfDataUri;
+    iframe.onload = () => {
+      setTimeout(() => {
+        try { iframe.contentWindow.print(); } catch(e) { window.open(pdfDataUri, '_blank'); }
+      }, 300);
+    };
   };
 
   const generarTurno = async (service, subServicio) => {
