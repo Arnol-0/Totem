@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { jsPDF } from 'jspdf';
 import logoST from '../assets/logost.png';
-import { obtenerYIncrementarContador, registrarTicket, resetearColaMedianoche } from '../firebase.js';
 
 /* ── SVG Icons ── */
 const IconTicket = () => (
@@ -93,47 +92,10 @@ const IconBack = () => (
 
 /* ── Component ── */
 const Inicio = () => {
-  const [turneroIniciado, setTurneroIniciado] = useState(false);
-  const [animating, setAnimating] = useState(false);
   const [rut, setRut] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
-  const [generando, setGenerando] = useState(false); // loading mientras escribe en Firebase
-  const [fecha, setFecha] = useState(new Date());
-
-  // Actualizar reloj cada segundo en pantalla de inicio
-  useEffect(() => {
-    const tick = setInterval(() => setFecha(new Date()), 1000);
-    return () => clearInterval(tick);
-  }, []);
-
-  // Reset automático a medianoche
-  useEffect(() => {
-    const ahora = new Date();
-    const manana = new Date(ahora);
-    manana.setDate(manana.getDate() + 1);
-    manana.setHours(0, 0, 0, 0);
-    const msHastaMedianoche = manana - ahora;
-    const t = setTimeout(async () => {
-      // 1. Borrar cola activa en Firebase (historial ya está guardado ticket a ticket)
-      await resetearColaMedianoche();
-      // 2. Resetear estado local
-      setTurneroIniciado(false);
-      setAnimating(false);
-      setRut('');
-      setCurrentUser(null);
-      setSelectedService(null);
-    }, msHastaMedianoche);
-    return () => clearTimeout(t);
-  }, [turneroIniciado]);
-
-  const handleIniciarTurnero = () => {
-    setAnimating(true);
-    setTimeout(() => {
-      setTurneroIniciado(true);
-      setAnimating(false);
-    }, 700);
-  };
+  const [counters, setCounters] = useState({ cft: 1, ip: 1, consulta: 1, esperas: 1, tens: 1, salud: 1 });
 
   const formatRut = (value) => {
     const cleanValue = value.replace(/[^0-9kK]/g, '').toUpperCase();
@@ -163,131 +125,31 @@ const Inicio = () => {
   };
 
   const generarBoletoPDF = (ticketNumber, rut, servicioNombre) => {
-    // Impresora térmica AB-PD880 — papel 80mm de ancho, largo continuo
-    // Márgenes: 4mm c/u → área útil = 72mm
-    // Alto calculado exacto al contenido para evitar hoja en blanco al final
-    const W = 80;       // ancho físico del papel (mm)
-    const M = 4;        // margen lateral
-    const CX = W / 2;  // centro horizontal
-
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [W, 148] });
-
-    // ── Encabezado ────────────────────────────────────────────────────
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text('TÓTEM DE ATENCIÓN', CX, 8, { align: 'center' });
-
-    // ── Línea separadora ──────────────────────────────────────────────
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.line(M, 11, W - M, 11);
-
-    // ── Número de ticket (grande, protagonista) ───────────────────────
-    doc.setFontSize(64);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'bold');
-    doc.text(ticketNumber, CX, 50, { align: 'center' });
-
-    // ── Línea separadora ──────────────────────────────────────────────
-    doc.setDrawColor(200, 200, 200);
-    doc.line(M, 56, W - M, 56);
-
-    // ── Datos del ticket ──────────────────────────────────────────────
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(60, 60, 60);
-
-    const ahora = new Date();
-    const fecha = ahora.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const hora  = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-
-    // Servicio con wrap automático si es largo
-    const lineasServicio = doc.splitTextToSize(`Servicio: ${servicioNombre}`, W - M * 2);
-    doc.text(lineasServicio, M, 63);
-    const yDespuesServicio = 63 + lineasServicio.length * 4.5;
-
-    doc.text(`RUT:     ${rut}`,   M, yDespuesServicio);
-    doc.text(`Fecha:   ${fecha}`, M, yDespuesServicio + 5);
-    doc.text(`Hora:    ${hora}`,  M, yDespuesServicio + 10);
-
-    // ── Línea final + mensaje ─────────────────────────────────────────
-    const yFinal = yDespuesServicio + 17;
-    doc.setDrawColor(200, 200, 200);
-    doc.line(M, yFinal, W - M, yFinal);
-    doc.setFontSize(7.5);
-    doc.setTextColor(120, 120, 120);
-    doc.text('Por favor espere su turno.', CX, yFinal + 5, { align: 'center' });
-
-    // ── Recortar PDF al alto real del contenido ───────────────────────
-    const altoPDF = yFinal + 10;
-    const docFinal = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [W, altoPDF] });
-    // Re-dibuja todo en el doc con tamaño exacto
-    docFinal.setFontSize(9);
-    docFinal.setTextColor(100, 100, 100);
-    docFinal.text('TÓTEM DE ATENCIÓN', CX, 8, { align: 'center' });
-    docFinal.setDrawColor(200, 200, 200);
-    docFinal.setLineWidth(0.3);
-    docFinal.line(M, 11, W - M, 11);
-    docFinal.setFontSize(64);
-    docFinal.setTextColor(0, 0, 0);
-    docFinal.setFont('helvetica', 'bold');
-    docFinal.text(ticketNumber, CX, 50, { align: 'center' });
-    docFinal.setDrawColor(200, 200, 200);
-    docFinal.line(M, 56, W - M, 56);
-    docFinal.setFont('helvetica', 'normal');
-    docFinal.setFontSize(8);
-    docFinal.setTextColor(60, 60, 60);
-    docFinal.text(lineasServicio, M, 63);
-    docFinal.text(`RUT:     ${rut}`,   M, yDespuesServicio);
-    docFinal.text(`Fecha:   ${fecha}`, M, yDespuesServicio + 5);
-    docFinal.text(`Hora:    ${hora}`,  M, yDespuesServicio + 10);
-    docFinal.setDrawColor(200, 200, 200);
-    docFinal.line(M, yFinal, W - M, yFinal);
-    docFinal.setFontSize(7.5);
-    docFinal.setTextColor(120, 120, 120);
-    docFinal.text('Por favor espere su turno.', CX, yFinal + 5, { align: 'center' });
-
-    // ── Imprimir al instante sin nueva ventana (iframe oculto) ────────
-    const pdfDataUri = docFinal.output('datauristring');
-    let iframe = document.getElementById('_print_frame_totem');
-    if (!iframe) {
-      iframe = document.createElement('iframe');
-      iframe.id = '_print_frame_totem';
-      iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;visibility:hidden;';
-      document.body.appendChild(iframe);
-    }
-    iframe.src = pdfDataUri;
-    iframe.onload = () => {
-      setTimeout(() => {
-        try { iframe.contentWindow.print(); } catch(e) { window.open(pdfDataUri, '_blank'); }
-      }, 300);
-    };
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [80, 100] });
+    doc.setFontSize(14);
+    doc.text('Tótem de Atención', 40, 10, { align: 'center' });
+    doc.setFontSize(36);
+    doc.text(ticketNumber, 40, 40, { align: 'center' });
+    doc.setDrawColor(0);
+    doc.line(10, 45, 70, 45);
+    doc.setFontSize(12);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Servicio: ${servicioNombre}`, 10, 55);
+    doc.text(`RUT: ${rut}`, 10, 63);
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 10, 71);
+    doc.text(`Hora: ${new Date().toLocaleTimeString()}`, 10, 79);
+    doc.setFontSize(10);
+    doc.text('Por favor espere su turno.', 40, 90, { align: 'center' });
+    doc.autoPrint();
+    window.open(doc.output('bloburl'), '_blank');
   };
 
-  const generarTurno = async (service, subServicio) => {
+  const generarTurno = (service, subServicio) => {
     const serviceNames = { cft: 'Centro de Formación Técnica', esperas: 'Lista de Espera', consulta: 'Consultas', tens: 'Técnico en Enfermería', salud: 'Área de Salud', ip: 'Instituto Profesional' };
     const letters = { tens: 'A', salud: 'B', cft: 'C', ip: 'D', consulta: 'E', esperas: 'F' };
-    const servicioNombre = subServicio || serviceNames[service];
-    const letra = letters[service];
-
-    setGenerando(true);
-    try {
-      // 1. Número atómico desde Firebase
-      const numero = await obtenerYIncrementarContador(service);
-      const ticketNumber = `${letra}-${numero}`;
-
-      // 2. Registrar en cola activa + historial
-      await registrarTicket(service, numero, letra, currentUser, servicioNombre);
-
-      // 3. Generar PDF / boleto físico
-      generarBoletoPDF(ticketNumber, currentUser, servicioNombre);
-    } catch (err) {
-      console.error('Error generando turno:', err);
-      alert('Error al conectar con el servidor. Intenta nuevamente.');
-    } finally {
-      setGenerando(false);
-    }
-
+    const ticketNumber = `${letters[service]}-${counters[service]}`;
+    generarBoletoPDF(ticketNumber, currentUser, subServicio || serviceNames[service]);
+    setCounters(prev => ({ ...prev, [service]: prev[service] + 1 }));
     setTimeout(() => { setCurrentUser(null); setRut(''); setSelectedService(null); }, 3000);
   };
 
@@ -298,63 +160,12 @@ const Inicio = () => {
 
   const resetSystem = () => { setCurrentUser(null); setRut(''); setSelectedService(null); };
 
-  const diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const fechaStr = `${diasSemana[fecha.getDay()]}, ${fecha.getDate()} de ${meses[fecha.getMonth()]} ${fecha.getFullYear()}`;
-  const horaStr = fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-  /* ── SCREEN: Splash / Inicio del Turnero ── */
-  if (!turneroIniciado) {
-    return (
-      <div
-        className={animating ? 'anim-fade-slide-down' : 'anim-fade-slide-up'}
-        style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #f0fdf4 0%, #ffffff 50%, #f0fdf4 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', fontFamily: 'system-ui, sans-serif' }}
-      >
-        {/* Logo */}
-        <div style={{ marginBottom: '32px' }}>
-          <img src={logoST} alt="Logo Institución" style={{ height: '110px', width: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.10))' }} />
-        </div>
-
-        {/* Título */}
-        <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#14532d', marginBottom: '8px', textAlign: 'center', letterSpacing: '-0.5px' }}>
-          Sistema de Turnos
-        </h1>
-        <p style={{ fontSize: '15px', color: '#6b7280', marginBottom: '48px', textAlign: 'center' }}>
-          Tótem de Atención Digital
-        </p>
-
-        {/* Fecha y hora */}
-        <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '16px 32px', marginBottom: '48px', textAlign: 'center' }}>
-          <div style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            {fechaStr}
-          </div>
-          <div style={{ fontSize: '36px', fontWeight: '700', color: '#111827', letterSpacing: '2px', fontVariantNumeric: 'tabular-nums' }}>
-            {horaStr}
-          </div>
-        </div>
-
-        {/* Botón Iniciar */}
-        <button
-          className="btn-iniciar"
-          onClick={handleIniciarTurnero}
-          style={{ background: '#22c55e', border: 'none', borderRadius: '20px', padding: '20px 56px', fontSize: '20px', fontWeight: '800', color: '#fff', cursor: 'pointer', letterSpacing: '0.3px' }}
-        >
-          ▶ Iniciar Turnero
-        </button>
-
-        <p style={{ marginTop: '24px', fontSize: '12px', color: '#d1d5db' }}>
-          Se restablece automáticamente a las 00:00 h
-        </p>
-      </div>
-    );
-  }
-
   /* ── SCREEN: RUT Entry ── */
   if (!currentUser) {
     const cleanRut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
     const keys = [1, 2, 3, 4, 5, 6, 7, 8, 9, 'K', 0, 'DEL'];
     return (
-      <div className="anim-fade-slide-up min-h-screen bg-white flex flex-col" style={{ fontFamily: 'system-ui, sans-serif' }}>
+      <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: 'system-ui, sans-serif' }}>
         {/* Header */}
         <div className="flex items-center px-5 py-4 border-b border-gray-100">
           <div className="w-8" />
@@ -393,11 +204,10 @@ const Inicio = () => {
 
           {/* Numeric keyboard */}
           <div className="w-full max-w-sm grid grid-cols-3 gap-3 mb-5">
-            {keys.map((key, i) => (
+            {keys.map((key) => (
               <button
                 key={key}
-                className="anim-key"
-                style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '0', height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: key === 'DEL' ? '14px' : '26px', fontWeight: '600', color: '#1f2937', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', cursor: 'pointer', animationDelay: `${i * 40}ms` }}
+                style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '0', height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: key === 'DEL' ? '14px' : '26px', fontWeight: '600', color: '#1f2937', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', cursor: 'pointer' }}
                 onClick={() => {
                   if (key === 'DEL') {
                     setRut(formatRut(cleanRut.slice(0, -1)));
@@ -467,14 +277,13 @@ const Inicio = () => {
               <button
                 key={item.service}
                 onClick={() => generarTurno(item.service, item.label)}
-                disabled={generando}
-                style={{ background: '#fff', border: '1px solid #f3f4f6', borderRadius: '16px', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px', cursor: generando ? 'not-allowed' : 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', width: '100%', opacity: generando ? 0.7 : 1 }}
+                style={{ background: '#fff', border: '1px solid #f3f4f6', borderRadius: '16px', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', width: '100%' }}
               >
                 <div style={{ width: '40px', height: '40px', background: '#f3f4f6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0 }}>
                   {item.icon}
                 </div>
                 <span style={{ flex: 1, textAlign: 'left', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
-                  {generando ? 'Generando turno...' : item.label}
+                  {item.label}
                 </span>
                 <IconChevron />
               </button>
@@ -533,16 +342,13 @@ const Inicio = () => {
             <button
               key={svc.key}
               onClick={() => handleServiceSelect(svc.key)}
-              disabled={generando}
-              style={{ background: '#22c55e', border: 'none', borderRadius: '18px', padding: '20px 22px', display: 'flex', alignItems: 'center', gap: '14px', cursor: generando ? 'not-allowed' : 'pointer', width: '100%', boxShadow: '0 4px 14px rgba(34,197,94,0.3)', opacity: generando ? 0.7 : 1 }}
+              style={{ background: '#22c55e', border: 'none', borderRadius: '18px', padding: '20px 22px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', width: '100%', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}
             >
               <div style={{ flex: 1, textAlign: 'left' }}>
                 <div style={{ fontSize: '16px', fontWeight: '800', color: '#14532d', marginBottom: '2px' }}>{svc.label}</div>
                 <div style={{ fontSize: '13px', color: '#166534' }}>{svc.desc}</div>
               </div>
-              <div style={{ color: '#14532d' }}>
-                {generando ? <span style={{ fontSize: '12px', fontWeight: '600' }}>...</span> : svc.icon}
-              </div>
+              <div style={{ color: '#14532d' }}>{svc.icon}</div>
             </button>
           ))}
         </div>
