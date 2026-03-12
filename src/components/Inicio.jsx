@@ -2,7 +2,6 @@
 import { jsPDF } from 'jspdf';
 import logoST from '../assets/logost.png';
 import { obtenerYIncrementarContador, registrarTicket, resetearColaMedianoche } from '../firebase.js';
-
 /* 
    ICONOS SVG
  */
@@ -242,43 +241,66 @@ const Inicio = () => {
 
     return (
       <div className="min-h-screen bg-white flex flex-col">
+        {/* Header */}
         <div className="flex items-center px-5 md:px-10 py-4 md:py-5 border-b border-gray-100">
           <div className="w-8" />
-          <h1 className="flex-1 text-center text-base md:text-xl font-semibold text-gray-700">Totem de Ayuda</h1>
+          <h1 className="flex-1 text-center text-base md:text-xl font-semibold text-gray-700">
+            Tótem de Ayuda
+          </h1>
           <div className="w-8" />
         </div>
 
-        <div className="flex-1 flex flex-col items-center px-6 md:px-16 pt-8 md:pt-10 pb-6">
-          <img src={logoST} alt="Logo ST" className="h-16 md:h-28 w-auto object-contain mb-5 md:mb-7" />
+        {/* Body centrado */}
+        <div className="flex-1 flex flex-col items-center px-6 md:px-16 pt-6 md:pt-10 pb-5">
 
-          <h2 style={{ fontSize: 'clamp(26px, 5vw, 46px)', fontWeight: 800, color: '#111827', textAlign: 'center', lineHeight: 1.15, marginBottom: '10px' }}>
-            Sistema de Turnos Digital
+          {/* Logo */}
+          <img src={logoST} alt="Logo ST" className="h-16 md:h-28 w-auto object-contain mb-4 md:mb-7" />
+
+          {/* Título */}
+          <h2 style={{ fontSize: 'clamp(24px, 5vw, 44px)', fontWeight: 800, color: '#111827', textAlign: 'center', lineHeight: 1.15, marginBottom: '8px' }}>
+            Sistema de Turnos<br />Digital
           </h2>
-          <p style={{ fontSize: 'clamp(13px, 2vw, 17px)', color: '#9ca3af', textAlign: 'center', marginBottom: 'clamp(24px, 4vw, 40px)' }}>
-            Identificate para solicitar tu atencion.
+          <p style={{ fontSize: 'clamp(13px, 2vw, 16px)', color: '#9ca3af', textAlign: 'center', marginBottom: 'clamp(20px, 3.5vw, 36px)' }}>
+            Por favor, identifícate para solicitar tu atención.
           </p>
 
-          <div style={{ width: '100%', maxWidth: 'min(460px, 88vw)', marginBottom: '10px' }}>
-            <span style={{ fontSize: 'clamp(10px, 1.4vw, 13px)', fontWeight: 700, letterSpacing: '0.1em', color: '#6b7280', textTransform: 'uppercase' }}>
+          {/* Etiqueta */}
+          <div style={{ width: '100%', maxWidth: 'min(480px, 88vw)', marginBottom: '8px' }}>
+            <span style={{ fontSize: 'clamp(10px, 1.4vw, 12px)', fontWeight: 700, letterSpacing: '0.12em', color: '#6b7280', textTransform: 'uppercase' }}>
               Ingresa tu RUT
             </span>
           </div>
 
-          <div style={{ width: '100%', maxWidth: 'min(460px, 88vw)', marginBottom: 'clamp(16px, 3vw, 24px)' }}>
-            <div className={`rut-box flex items-center justify-between bg-gray-50 border border-gray-200 rounded-2xl px-5 md:px-6 py-4 md:py-5 ${rut ? 'has-value' : ''}`}>
-              <span style={{ fontFamily: 'monospace', fontSize: 'clamp(18px, 3.5vw, 30px)', fontWeight: 600, letterSpacing: '0.05em', color: rut ? '#1f2937' : '#d1d5db' }}>
+          {/* Display RUT */}
+          <div style={{ width: '100%', maxWidth: 'min(480px, 88vw)', marginBottom: 'clamp(14px, 2.5vw, 22px)' }}>
+            <div className={`rut-box flex items-center justify-between bg-gray-50 border border-gray-200 rounded-2xl px-5 md:px-7 py-4 md:py-5 ${rut ? 'has-value' : ''}`}>
+              <span style={{ fontFamily: 'monospace', fontSize: 'clamp(20px, 3.5vw, 30px)', fontWeight: 600, letterSpacing: '0.05em', color: rut ? '#1f2937' : '#d1d5db' }}>
                 {rut || '12.345.678-K'}
               </span>
               <IconIdCard />
             </div>
           </div>
 
-          <div style={{ width: '100%', maxWidth: 'min(460px, 88vw)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'clamp(8px, 1.5vw, 16px)', marginBottom: 'clamp(16px, 3vw, 24px)' }}>
+          {/* Teclado */}
+          <div style={{ width: '100%', maxWidth: 'min(480px, 88vw)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'clamp(8px, 1.5vw, 14px)', marginBottom: 'clamp(14px, 2.5vw, 22px)' }}>
             {keys.map((key, i) => (
               <button
                 key={key}
                 className="anim-key"
-                style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '16px', height: 'clamp(64px, 9vw, 96px)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: key === 'DEL' ? '13px' : 'clamp(22px, 4vw, 34px)', fontWeight: 600, color: '#1f2937', boxShadow: '0 2px 6px rgba(0,0,0,0.05)', animationDelay: `${i * 35}ms` }}
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '16px',
+                  height: 'clamp(60px, 8.5vw, 96px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: key === 'DEL' ? '13px' : 'clamp(22px, 3.8vw, 34px)',
+                  fontWeight: 600,
+                  color: '#1f2937',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+                  animationDelay: `${i * 35}ms`,
+                }}
                 onClick={() => {
                   if (key === 'DEL') setRut(formatRut(cleanRut.slice(0, -1)));
                   else if (cleanRut.length < 9) setRut(formatRut(cleanRut + key.toString().toUpperCase()));
@@ -289,23 +311,37 @@ const Inicio = () => {
             ))}
           </div>
 
-          <div style={{ width: '100%', maxWidth: 'min(460px, 88vw)', marginBottom: '12px' }}>
+          {/* Botón continuar */}
+          <div style={{ width: '100%', maxWidth: 'min(480px, 88vw)', marginBottom: '10px' }}>
             <button
               className="btn-continuar"
               onClick={handleRutSubmit}
               disabled={!rut}
-              style={{ width: '100%', background: '#22c55e', border: 'none', borderRadius: '18px', padding: 'clamp(15px, 2.5vw, 22px)', fontSize: 'clamp(15px, 2.2vw, 20px)', fontWeight: 700, color: '#fff', opacity: rut ? 1 : 0.45, cursor: rut ? 'pointer' : 'not-allowed' }}
+              style={{
+                width: '100%',
+                background: '#22c55e',
+                border: 'none',
+                borderRadius: '18px',
+                padding: 'clamp(15px, 2.5vw, 22px)',
+                fontSize: 'clamp(15px, 2.2vw, 20px)',
+                fontWeight: 700,
+                color: '#fff',
+                opacity: rut ? 1 : 0.45,
+                cursor: rut ? 'pointer' : 'not-allowed',
+              }}
             >
-              Continuar
+              Continuar →
             </button>
           </div>
 
+          {/* Ayuda */}
           <div className="flex items-center gap-1.5 mt-1">
             <IconInfo />
-            <span style={{ fontSize: 'clamp(11px, 1.6vw, 14px)', color: '#9ca3af' }}>
-              Necesitas ayuda? Solicita asistencia al personal.
+            <span style={{ fontSize: 'clamp(11px, 1.6vw, 13px)', color: '#9ca3af' }}>
+              ¿Necesitas ayuda? Solicita asistencia al personal.
             </span>
           </div>
+
         </div>
       </div>
     );
