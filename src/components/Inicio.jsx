@@ -191,12 +191,12 @@ const Inicio = () => {
     const diaFull = fecha.toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
     return (
       <div
-        className={animating ? 'anim-fade-slide-down' : 'anim-fade-slide-up'}
+        className={animating ? 'anim-fade-down' : 'anim-fade-up'}
         style={{ minHeight: '100vh', background: '#ffffff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui, sans-serif', padding: '32px 24px' }}
       >
         {/* Logo */}
         <div className="anim-pop-in" style={{ animationDelay: '0.1s', marginBottom: '28px' }}>
-          <img src={logoST} alt="Logo" className="h-24 md:h-40 w-auto object-contain" />
+          <img src={logoST} alt="Logo" className="h-24 md:h-40 w-auto object-contain logo-float" />
         </div>
 
         {/* Título */}
@@ -267,7 +267,7 @@ const Inicio = () => {
 
           {/* RUT display */}
           <div className="w-full mb-5 md:mb-6" style={{ maxWidth: 'min(480px, 88vw)' }}>
-            <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-2xl px-5 md:px-7 py-4 md:py-5">
+            <div className={`rut-box flex items-center justify-between bg-gray-50 border border-gray-200 rounded-2xl px-5 md:px-7 py-4 md:py-5 ${rut ? 'has-value' : ''}`}>
               <span className={`font-mono tracking-wider text-xl md:text-3xl ${rut ? 'text-gray-800' : 'text-gray-300'}`}>
                 {rut || '12.345.678-K'}
               </span>
@@ -307,6 +307,7 @@ const Inicio = () => {
           {/* Continue button */}
           <div className="w-full mb-3" style={{ maxWidth: 'min(480px, 88vw)' }}>
             <button
+              className="btn-continuar"
               onClick={handleRutSubmit}
               disabled={!rut}
               style={{
@@ -370,6 +371,7 @@ const Inicio = () => {
             {cftItems.map((item) => (
               <button
                 key={item.service}
+                className="btn-list"
                 onClick={() => generarTurno(item.service, item.label)}
                 disabled={generando}
                 style={{
@@ -397,6 +399,7 @@ const Inicio = () => {
 
           {/* Volver atrás */}
           <button
+            className="btn-back"
             onClick={() => setSelectedService(null)}
             style={{ background: '#f3f4f6', border: 'none', borderRadius: '18px', padding: 'clamp(14px,2vw,22px) 32px', fontSize: 'clamp(14px,2vw,20px)', fontWeight: '600', color: '#374151', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', width: '100%', maxWidth: 'min(520px, 88vw)', justifyContent: 'center' }}
           >
@@ -446,6 +449,7 @@ const Inicio = () => {
           {services.map((svc) => (
             <button
               key={svc.key}
+              className="btn-service"
               onClick={() => handleServiceSelect(svc.key)}
               disabled={generando}
               style={{
@@ -471,6 +475,7 @@ const Inicio = () => {
 
         {/* Volver al inicio */}
         <button
+          className="btn-back"
           onClick={resetSystem}
           style={{ background: '#f3f4f6', border: 'none', borderRadius: '18px', padding: 'clamp(14px,2vw,22px) 32px', fontSize: 'clamp(14px,2vw,20px)', fontWeight: '600', color: '#374151', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', width: '100%', maxWidth: 'min(520px, 88vw)', justifyContent: 'center' }}
         >
