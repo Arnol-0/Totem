@@ -103,8 +103,8 @@ button:focus-visible { outline: 2px solid #22c55e; outline-offset: 2px; }
 .btn-back:active { transform: scale(0.97); }
 
 /* ── Display RUT ── */
-.rut-box { transition: border-color 0.2s, box-shadow 0.2s; }
-.rut-box.has-value { border-color: #86efac !important; box-shadow: 0 0 0 3px rgba(134,239,172,0.25); }
+.rut-box { transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s; }
+.rut-box.has-value { background-color: #f9fafb !important; border-color: #86efac !important; box-shadow: 0 0 0 3px rgba(134,239,172,0.2); }
 
 /* ── Botón continuar ── */
 .btn-continuar {
