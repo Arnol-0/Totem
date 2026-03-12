@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ── Reset ── */
+/* ── Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -17,29 +17,23 @@ body { min-height: 100vh; background-color: #ffffff; overflow-x: hidden; }
 button { font-family: inherit; cursor: pointer; }
 button:focus-visible { outline: 2px solid #22c55e; outline-offset: 2px; }
 
-/* ════════════════════════════════
-   KEYFRAMES
-════════════════════════════════ */
+/* ── Keyframes ── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(28px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeDown {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to   { opacity: 0; transform: translateY(-36px) scale(0.97); }
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-32px); }
 }
 @keyframes popIn {
   0%   { opacity: 0; transform: scale(0.72); }
   65%  { transform: scale(1.06); }
   100% { opacity: 1; transform: scale(1); }
 }
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(40px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
 @keyframes pulseRing {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); }
-  50%       { box-shadow: 0 0 0 18px rgba(34,197,94,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+  50%       { box-shadow: 0 0 0 16px rgba(34,197,94,0); }
 }
 @keyframes shimmer {
   0%   { background-position: -200% center; }
@@ -47,33 +41,28 @@ button:focus-visible { outline: 2px solid #22c55e; outline-offset: 2px; }
 }
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-8px); }
+  50%       { transform: translateY(-7px); }
 }
 
-/* ════════════════════════════════
-   CLASES DE ANIMACIÓN
-════════════════════════════════ */
-
-/* Compatibilidad con nombres anteriores */
-.anim-fade-slide-up   { animation: fadeUp   0.5s  cubic-bezier(.22,.68,0,1.2) both; }
-.anim-fade-slide-down { animation: fadeDown 0.45s ease-in both; }
+/* ── Animaciones de entrada ── */
 .anim-fade-up         { animation: fadeUp   0.5s  cubic-bezier(.22,.68,0,1.2) both; }
-.anim-fade-down       { animation: fadeDown 0.45s ease-in both; }
+.anim-fade-down       { animation: fadeDown 0.4s  ease-in both; }
+.anim-fade-slide-up   { animation: fadeUp   0.5s  cubic-bezier(.22,.68,0,1.2) both; }
+.anim-fade-slide-down { animation: fadeDown 0.4s  ease-in both; }
 .anim-pop-in          { animation: popIn    0.45s cubic-bezier(.22,.68,0,1.2) both; }
-.anim-slide-right     { animation: slideInRight 0.4s cubic-bezier(.22,.68,0,1.2) both; }
 
-/* Teclas — spring con delay escalonado */
+/* ── Teclas del teclado ── */
 .anim-key {
   animation: popIn 0.38s cubic-bezier(.22,.68,0,1.2) both;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
-.anim-key:hover  { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; }
-.anim-key:active { transform: scale(0.89) !important; box-shadow: none !important; }
+.anim-key:hover  { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1) !important; }
+.anim-key:active { transform: scale(0.88) !important; box-shadow: none !important; }
 
-/* Logo flotante */
-.logo-float { animation: float 3.8s ease-in-out infinite; }
+/* ── Logo flotante (splash) ── */
+.logo-float { animation: float 4s ease-in-out infinite; }
 
-/* Botón Iniciar Turnero — pulso + shimmer */
+/* ── Botón Iniciar: pulso + shimmer ── */
 .btn-iniciar {
   position: relative;
   overflow: hidden;
@@ -84,44 +73,42 @@ button:focus-visible { outline: 2px solid #22c55e; outline-offset: 2px; }
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.3) 50%, transparent 60%);
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.28) 50%, transparent 60%);
   background-size: 200% 100%;
-  animation: shimmer 2.8s ease-in-out infinite;
+  animation: shimmer 2.6s ease-in-out infinite;
   pointer-events: none;
 }
-.btn-iniciar:hover  { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(34,197,94,0.45) !important; }
+.btn-iniciar:hover  { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(34,197,94,0.4) !important; }
 .btn-iniciar:active { transform: scale(0.97); animation: none; }
 
-/* Botones de servicio (verde) */
+/* ── Botones de servicio (verde) ── */
 .btn-service {
-  position: relative;
-  overflow: hidden;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
-.btn-service:hover:not(:disabled)  { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(34,197,94,0.4) !important; }
+.btn-service:hover:not(:disabled)  { transform: translateY(-3px); box-shadow: 0 10px 26px rgba(34,197,94,0.38) !important; }
 .btn-service:active:not(:disabled) { transform: scale(0.97); }
 
-/* Botones de lista CFT */
+/* ── Lista CFT ── */
 .btn-list {
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.15s;
+  transition: transform 0.18s ease, background 0.15s;
 }
-.btn-list:hover:not(:disabled)  { transform: translateX(5px); box-shadow: 0 6px 18px rgba(0,0,0,0.08) !important; background: #f9fafb !important; }
+.btn-list:hover:not(:disabled)  { transform: translateX(4px); background: #f9fafb !important; }
 .btn-list:active:not(:disabled) { transform: scale(0.98); }
 
-/* Botón secundario (Volver) */
+/* ── Botón volver ── */
 .btn-back {
   transition: transform 0.15s ease, background 0.15s;
 }
 .btn-back:hover  { transform: translateY(-2px); background: #e5e7eb !important; }
 .btn-back:active { transform: scale(0.97); }
 
-/* Display RUT — borde verde al tener valor */
+/* ── Display RUT ── */
 .rut-box { transition: border-color 0.2s, box-shadow 0.2s; }
-.rut-box.has-value { border-color: #86efac !important; box-shadow: 0 0 0 3px rgba(34,197,94,0.14); }
+.rut-box.has-value { border-color: #86efac !important; box-shadow: 0 0 0 3px rgba(34,197,94,0.12); }
 
-/* Botón Continuar */
+/* ── Botón continuar ── */
 .btn-continuar {
-  transition: transform 0.18s ease, opacity 0.2s, box-shadow 0.18s;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
-.btn-continuar:hover:not(:disabled)  { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(34,197,94,0.38); }
+.btn-continuar:hover:not(:disabled)  { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(34,197,94,0.35); }
 .btn-continuar:active:not(:disabled) { transform: scale(0.97); }
