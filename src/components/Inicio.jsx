@@ -273,8 +273,12 @@ const Inicio = () => {
 
           {/* Display RUT */}
           <div style={{ width: '100%', maxWidth: 'min(480px, 88vw)', marginBottom: 'clamp(14px, 2.5vw, 22px)' }}>
-            <div className={`rut-box flex items-center justify-between bg-gray-100 border border-gray-100 rounded-2xl px-7 md:px-9 py-5 md:py-7 ${rut ? 'has-value' : ''}`}>
-              <span style={{ fontFamily: 'monospace', fontSize: 'clamp(17px, 2.8vw, 22px)', fontWeight: 500, letterSpacing: '0.06em', color: rut ? '#111827' : '#c4c4c4' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '14px',
+              padding: 'clamp(16px, 3vw, 24px) clamp(18px, 3.5vw, 28px)',
+            }}>
+              <span style={{ fontFamily: 'monospace', fontSize: 'clamp(18px, 3vw, 24px)', fontWeight: 700, letterSpacing: '0.05em', color: rut ? '#1f2937' : '#9ca3af' }}>
                 {rut || '12.345.678-K'}
               </span>
               <IconIdCard />
