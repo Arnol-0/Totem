@@ -148,6 +148,9 @@ const Inicio = () => {
     iframe.style.display = 'none';
     document.body.appendChild(iframe);
 
+    // Convertimos la ruta del logo a una URL absoluta para que cargue dentro del iframe
+    const logoUrl = new URL(logoST, window.location.origin).href;
+
     // Ajustes extremos para impresoras térmicas:
     // -webkit-text-stroke engrosa la letra para que se vea muy oscuro.
     // @page { margin: 0 } elimina el 'localhost' y el '1/1' de los bordes.
@@ -156,11 +159,9 @@ const Inicio = () => {
       <html>
         <head>
           <style>
-            @media print {
-              @page { 
-                margin: 0 !important; 
-                size: 58mm 90mm; 
-              }
+            @page { 
+              margin: 0; 
+              size: 58mm auto; 
             }
             body { 
               margin: 0; 
@@ -173,23 +174,38 @@ const Inicio = () => {
             }
             .ticket {
               width: 58mm;
-              height: 90mm;
               box-sizing: border-box;
-              padding: 5mm;
+              /* Para empujar hacia la Izquierda visual, le damos más margen al lado Izquierdo del DOM (8mm)
+                 y menos al lado Derecho (2mm), debido a la rotación de 180 grados. */
+              padding: 5mm 2mm 5mm 8mm;
               transform: rotate(180deg);
               display: flex;
               flex-direction: column;
+              align-items: center; /* Centra todo perfectamente */
               font-weight: bold;
             }
-            .title { font-size: 16px; font-weight: bold; text-align: center; margin-bottom: 8px; }
-            .number { font-size: 42px; font-weight: bold; text-align: center; margin-bottom: 8px; letter-spacing: -1px; }
-            .line { border-top: 2px solid black; margin-bottom: 10px; width: 100%; }
-            .details { font-size: 12px; font-weight: bold; text-align: left; margin-bottom: 15px; line-height: 1.5; }
-            .footer { font-size: 12px; font-weight: bold; text-align: center; margin-top: auto; padding-bottom: 10mm; }
+            .logo {
+              width: 26mm;
+              margin-bottom: 8px;
+              display: block;
+              filter: grayscale(100%) contrast(1000%);
+            }
+            .title { font-size: 15px; text-align: center; margin-bottom: 2px; }
+            .number { font-size: 46px; text-align: center; margin-bottom: 4px; letter-spacing: -2px; }
+            .line { border-top: 2px dashed black; margin-bottom: 12px; width: 85%; }
+            .details { 
+              font-size: 12px; 
+              text-align: center; /* Centramos también los detalles (RUT, Fecha...) */
+              margin-bottom: 12px; 
+              line-height: 1.5; 
+              width: 100%;
+            }
+            .footer { font-size: 11px; text-align: center; margin-bottom: 2mm; }
           </style>
         </head>
         <body>
           <div class="ticket">
+            <img src="${logoUrl}" class="logo" />
             <div class="title">Totem de Atencion</div>
             <div class="number">${ticketNumber}</div>
             <div class="line"></div>
@@ -210,9 +226,12 @@ const Inicio = () => {
     iframe.contentWindow.document.close();
 
     iframe.onload = () => {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-      setTimeout(() => document.body.removeChild(iframe), 2000);
+      // Damos 500ms de tiempo extra para que la imagen del logo alcance a cargar antes de lanzar la impresión
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 2000);
+      }, 500);
     };
   };
 
