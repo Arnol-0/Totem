@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import logoST from '../assets/logost.png';
 import { obtenerYIncrementarContador, registrarTicket, resetearColaMedianoche } from '../firebase.js';
@@ -141,23 +141,79 @@ const Inicio = () => {
   };
 
   const generarBoletoPDF = (ticketNumber, rutUsuario, servicioNombre) => {
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [80, 100] });
-    doc.setFontSize(14);
-    doc.text('Totem de Atencion', 40, 10, { align: 'center' });
-    doc.setFontSize(36);
-    doc.text(ticketNumber, 40, 40, { align: 'center' });
-    doc.setDrawColor(0);
-    doc.line(10, 45, 70, 45);
-    doc.setFontSize(12);
-    doc.setTextColor(80, 80, 80);
-    doc.text(`Servicio: ${servicioNombre}`, 10, 55);
-    doc.text(`RUT: ${rutUsuario}`, 10, 63);
-    doc.text(`Fecha: ${new Date().toLocaleDateString('es-CL')}`, 10, 71);
-    doc.text(`Hora:  ${new Date().toLocaleTimeString('es-CL', { hour12: false })}`, 10, 79);
-    doc.setFontSize(10);
-    doc.text('Por favor espere su turno.', 40, 90, { align: 'center' });
-    doc.autoPrint();
-    window.open(doc.output('bloburl'), '_blank');
+    const fecha = new Date().toLocaleDateString('es-CL');
+    const hora = new Date().toLocaleTimeString('es-CL', { hour12: false });
+
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    // Ajustes extremos para impresoras térmicas:
+    // -webkit-text-stroke engrosa la letra para que se vea muy oscuro.
+    // @page { margin: 0 } elimina el 'localhost' y el '1/1' de los bordes.
+    const ticketHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            @media print {
+              @page { 
+                margin: 0 !important; 
+                size: 58mm 90mm; 
+              }
+            }
+            body { 
+              margin: 0; 
+              padding: 0; 
+              font-family: Arial, sans-serif; 
+              color: #000 !important; 
+              width: 58mm; 
+              background: white;
+              -webkit-print-color-adjust: exact;
+            }
+            .ticket {
+              width: 58mm;
+              height: 90mm;
+              box-sizing: border-box;
+              padding: 5mm;
+              transform: rotate(180deg);
+              display: flex;
+              flex-direction: column;
+              font-weight: bold;
+            }
+            .title { font-size: 16px; font-weight: bold; text-align: center; margin-bottom: 8px; }
+            .number { font-size: 42px; font-weight: bold; text-align: center; margin-bottom: 8px; letter-spacing: -1px; }
+            .line { border-top: 2px solid black; margin-bottom: 10px; width: 100%; }
+            .details { font-size: 12px; font-weight: bold; text-align: left; margin-bottom: 15px; line-height: 1.5; }
+            .footer { font-size: 12px; font-weight: bold; text-align: center; margin-top: auto; padding-bottom: 10mm; }
+          </style>
+        </head>
+        <body>
+          <div class="ticket">
+            <div class="title">Totem de Atencion</div>
+            <div class="number">${ticketNumber}</div>
+            <div class="line"></div>
+            <div class="details">
+              <div>Servicio: ${servicioNombre}</div>
+              <div>RUT: ${rutUsuario}</div>
+              <div>Fecha: ${fecha}</div>
+              <div>Hora: ${hora}</div>
+            </div>
+            <div class="footer">Por favor espere su turno.</div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    iframe.contentWindow.document.open();
+    iframe.contentWindow.document.write(ticketHTML);
+    iframe.contentWindow.document.close();
+
+    iframe.onload = () => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => document.body.removeChild(iframe), 2000);
+    };
   };
 
   const generarTurno = async (service, subServicio) => {
