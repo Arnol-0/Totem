@@ -77,6 +77,7 @@ const Inicio = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [generando, setGenerando]             = useState(false);
   const [fecha, setFecha]                     = useState(new Date());
+  const [ticketGenerado, setTicketGenerado]   = useState(null);
 
   useEffect(() => {
     const t = setInterval(() => setFecha(new Date()), 1000);
@@ -94,6 +95,7 @@ const Inicio = () => {
       setCurrentUser(null);
       setRut('');
       setSelectedService(null);
+      setTicketGenerado(null);
     }, msHasta);
     return () => clearTimeout(timer);
   }, []);
@@ -133,6 +135,7 @@ const Inicio = () => {
     setCurrentUser(null);
     setRut('');
     setSelectedService(null);
+    setTicketGenerado(null);
   };
 
   const handleIniciarTurnero = () => {
@@ -252,6 +255,7 @@ const Inicio = () => {
     try {
       const numero       = await obtenerYIncrementarContador(service);
       const ticketNumber = `${letra}-${numero}`;
+      setTicketGenerado(ticketNumber);
       await registrarTicket(service, numero, letra, currentUser, servicioNombre);
       generarBoletoPDF(ticketNumber, currentUser, servicioNombre);
     } catch (err) {
@@ -260,8 +264,70 @@ const Inicio = () => {
     } finally {
       setGenerando(false);
     }
-    setTimeout(resetSystem, 3000);
+    setTimeout(resetSystem, 5000);
   };
+
+  /* PANTALLA: Imprimiendo Ticket */
+  if (generando || ticketGenerado) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6" style={{ animation: 'fadeIn 0.5s ease-out' }}>
+        
+        <h2 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 800, color: '#111827', textAlign: 'center', marginBottom: '16px' }}>
+          Este es tu número
+        </h2>
+
+        <div style={{
+          background: 'linear-gradient(135deg, #22c55e 0%, #15803d 100%)',
+          borderRadius: '24px',
+          padding: 'clamp(30px, 6vw, 50px)',
+          width: '100%',
+          maxWidth: 'min(400px, 88vw)',
+          boxShadow: '0 20px 40px rgba(34, 197, 94, 0.3)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginBottom: 'clamp(40px, 8vw, 60px)',
+          transform: ticketGenerado ? 'scale(1)' : 'scale(0.9)',
+          opacity: ticketGenerado ? 1 : 0,
+          transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+        }}>
+          <span style={{ fontSize: 'clamp(64px, 12vw, 100px)', fontWeight: 900, color: '#ffffff', letterSpacing: '2px', textShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+            {ticketGenerado || '...'}
+          </span>
+        </div>
+
+        <div style={{ width: '100%', maxWidth: 'min(300px, 70vw)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <p style={{ fontSize: 'clamp(14px, 2.5vw, 18px)', color: '#6b7280', fontWeight: 600, marginBottom: '16px', textAlign: 'center' }}>
+            Estamos imprimiendo tu número...
+          </p>
+          <div style={{ width: '100%', height: '6px', background: '#f3f4f6', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
+            <div 
+              style={{ 
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                width: '50%',
+                background: 'linear-gradient(90deg, transparent, #22c55e, transparent)', 
+                borderRadius: '10px',
+                animation: 'loadingBar 1.5s infinite ease-in-out'
+              }} 
+            />
+          </div>
+        </div>
+
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes loadingBar {
+            0% { left: -50%; }
+            100% { left: 100%; }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   /* PANTALLA: Splash */
   if (!turneroIniciado) {
